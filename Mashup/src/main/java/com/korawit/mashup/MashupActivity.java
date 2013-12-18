@@ -1,6 +1,7 @@
 package com.korawit.mashup;
 
 import android.app.Activity;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
@@ -14,10 +15,28 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.web.client.RestTemplate;
+
+import java.util.List;
+
+/*
+*  This application was created for testing concept of manual mashup by using location and GooglePlace API
+*  Technical implementation
+*  Google Map API v2
+*  Google Location Aware Apps
+*  Spring Web service client for Android
+*  Jackson JSON parser
+*  Google Place API : Radar search
+*
+* */
+
+
 public class MashupActivity extends Activity implements GoogleMap.OnMarkerClickListener {
 
     private GoogleMap googleMap;
-    private LatLng currentPosition = new LatLng(35.607513, 139.685647);
+    private LatLng currentPosition; // = new LatLng(35.607513, 139.685647);
+    LocationProvider locationProvider;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -27,16 +46,13 @@ public class MashupActivity extends Activity implements GoogleMap.OnMarkerClickL
         try {
             // Loading map
             initializeMap();
-            setCenterLocation(currentPosition, 16);
-            placeMarker(currentPosition, "I'm here");
-            placeMarker(new LatLng(35.603513, 139.685647), "Location 1");
-            placeMarker(new LatLng(35.604513, 139.685647), "Location 2");
-            placeMarker(new LatLng(35.605513, 139.685647), "Location 3");
-            placeMarker(new LatLng(35.606513, 139.685647), "Location 4");
+            locationProvider = new LocationProvider(this);
+
 
         } catch (Exception e) {
             e.printStackTrace();
         }
+
     }
 
 
@@ -55,6 +71,17 @@ public class MashupActivity extends Activity implements GoogleMap.OnMarkerClickL
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
         if (id == R.id.action_settings) {
+
+
+            currentPosition = new LatLng(locationProvider.getCurrentLocation().getLatitude(), locationProvider.getCurrentLocation().getLongitude());
+            Toast.makeText(getApplicationContext(),currentPosition.toString(), Toast.LENGTH_SHORT).show();
+            placeMarker(currentPosition,"I'm here");
+            setCenterLocation(currentPosition, 16);
+
+            new HttpRequestTask().execute();
+
+
+
             return true;
         }
         return super.onOptionsItemSelected(item);
@@ -68,7 +95,7 @@ public class MashupActivity extends Activity implements GoogleMap.OnMarkerClickL
 
             // check if map is created successfully or not
             if (googleMap == null) {
-                Log.d("debug","Cannot get map fragment");
+                Log.d(getApplicationContext().getPackageName(),"Cannot get map fragment");
             }
             else{
                 // Set maker click event listener
@@ -105,4 +132,39 @@ public class MashupActivity extends Activity implements GoogleMap.OnMarkerClickL
         Toast.makeText(getApplicationContext(),marker.getTitle() + " clicked", Toast.LENGTH_SHORT).show();
         return false;
     }
+
+
+    private class HttpRequestTask extends AsyncTask<Void, Void, PlaceResults> {
+        @Override
+        protected PlaceResults doInBackground(Void... params) {
+            try {
+                final String url = String.format("https://maps.googleapis.com/maps/api/place/radarsearch/json?location=%s,%s" +
+                        "&radius=500&types=food|cafe&sensor=true&key=AIzaSyCcoCKxREA3yfpdahlCKqJxEP2qHqs9JvQ"
+                        ,currentPosition.latitude,currentPosition.longitude);
+                RestTemplate restTemplate = new RestTemplate();
+                restTemplate.getMessageConverters().add(new MappingJackson2HttpMessageConverter());
+                PlaceResults results = restTemplate.getForObject(url, PlaceResults.class);
+                return results;
+            } catch (Exception e) {
+                Log.e("MainActivity", e.getMessage(), e);
+            }
+
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(PlaceResults places) {
+
+            List<Results> res = places.getResults();
+
+            for (Results place : res) {
+
+                placeMarker(new LatLng(place.getGeometry().getLocation().getLat().doubleValue(),place.getGeometry().getLocation().getLng().doubleValue()),place.getId());
+
+            }
+        }
+
+    }
+
+
 }
