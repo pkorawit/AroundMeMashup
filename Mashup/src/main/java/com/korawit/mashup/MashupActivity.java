@@ -1,6 +1,7 @@
 package com.korawit.mashup;
 
 import android.app.Activity;
+import android.content.IntentFilter;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
@@ -37,6 +38,7 @@ public class MashupActivity extends Activity implements GoogleMap.OnMarkerClickL
     private GoogleMap googleMap;
     private LatLng currentPosition; // = new LatLng(35.607513, 139.685647);
     LocationProvider locationProvider;
+    private static final String broadcast_filter = "LOCATION_UPDATED";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -70,7 +72,7 @@ public class MashupActivity extends Activity implements GoogleMap.OnMarkerClickL
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
-        if (id == R.id.action_settings) {
+        if (id == R.id.action_current_location) {
 
 
             currentPosition = new LatLng(locationProvider.getCurrentLocation().getLatitude(), locationProvider.getCurrentLocation().getLongitude());
@@ -83,7 +85,17 @@ public class MashupActivity extends Activity implements GoogleMap.OnMarkerClickL
 
 
             return true;
+        }else if(id == R.id.action_track_location){
+
+            LocationUpdateReceiver receiver = new LocationUpdateReceiver();
+            receiver.setParentActivityHandler(this);
+            IntentFilter filter = new IntentFilter(broadcast_filter);
+            registerReceiver(receiver, filter);
+
+            return true;
         }
+
+
         return super.onOptionsItemSelected(item);
     }
 
@@ -163,6 +175,19 @@ public class MashupActivity extends Activity implements GoogleMap.OnMarkerClickL
 
             }
         }
+
+    }
+
+    public void UpdatePlaceMarker(LatLng currentPosition){
+
+        googleMap.clear();
+
+        this.currentPosition = currentPosition;
+
+        setCenterLocation(currentPosition, 16);
+
+        new HttpRequestTask().execute();
+
 
     }
 

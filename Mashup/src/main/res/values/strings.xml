@@ -3,6 +3,7 @@
 
     <string name="app_name">AroundMeMashup</string>
     <string name="hello_world">Hello world!</string>
-    <string name="action_settings">Settings</string>
+    <string name="action_track_location">Track Location</string>
+    <string name="action_current_location">Current Location</string>
 
 </resources>
