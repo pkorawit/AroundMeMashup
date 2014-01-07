@@ -1,4 +1,4 @@
-package com.korawit.mashup;
+package com.korawit.aroundmemashup;
 
 import android.app.Activity;
 import android.content.IntentFilter;
@@ -12,6 +12,7 @@ import android.widget.Toast;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
@@ -39,6 +40,7 @@ public class MashupActivity extends Activity implements GoogleMap.OnMarkerClickL
     private LatLng currentPosition; // = new LatLng(35.607513, 139.685647);
     LocationProvider locationProvider;
     private static final String broadcast_filter = "LOCATION_UPDATED";
+    private final String TAG = "com.korawit.aroundmemashup.MashupActivity";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -77,7 +79,6 @@ public class MashupActivity extends Activity implements GoogleMap.OnMarkerClickL
 
             currentPosition = new LatLng(locationProvider.getCurrentLocation().getLatitude(), locationProvider.getCurrentLocation().getLongitude());
             Toast.makeText(getApplicationContext(),currentPosition.toString(), Toast.LENGTH_SHORT).show();
-            placeMarker(currentPosition,"I'm here");
             setCenterLocation(currentPosition, 16);
 
             new HttpRequestTask().execute();
@@ -128,12 +129,19 @@ public class MashupActivity extends Activity implements GoogleMap.OnMarkerClickL
 
         googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(location, zoomLevel));
 
+        googleMap.addMarker(new MarkerOptions()
+                .position(location)
+                .title("I'm here")
+                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)));
+
     }
 
     // Put a marker to a location
     public void placeMarker(LatLng location, String title){
 
-        googleMap.addMarker(new MarkerOptions().position(location).title(title));
+        googleMap.addMarker(new MarkerOptions()
+                .position(location)
+                .title(title));
 
     }
 
@@ -151,8 +159,11 @@ public class MashupActivity extends Activity implements GoogleMap.OnMarkerClickL
         protected PlaceResults doInBackground(Void... params) {
             try {
                 final String url = String.format("https://maps.googleapis.com/maps/api/place/radarsearch/json?location=%s,%s" +
-                        "&radius=500&types=food|cafe&sensor=true&key=AIzaSyCcoCKxREA3yfpdahlCKqJxEP2qHqs9JvQ"
+                        "&radius=300&types=food|cafe&sensor=true&key=AIzaSyCcoCKxREA3yfpdahlCKqJxEP2qHqs9JvQ"
                         ,currentPosition.latitude,currentPosition.longitude);
+
+                Log.d(TAG,url);
+
                 RestTemplate restTemplate = new RestTemplate();
                 restTemplate.getMessageConverters().add(new MappingJackson2HttpMessageConverter());
                 PlaceResults results = restTemplate.getForObject(url, PlaceResults.class);

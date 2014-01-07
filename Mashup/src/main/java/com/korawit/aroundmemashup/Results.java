@@ -1,5 +1,5 @@
 
-package com.korawit.mashup;
+package com.korawit.aroundmemashup;
 
 public class Results{
    	private Geometry geometry;

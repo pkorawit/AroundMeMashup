@@ -1,4 +1,4 @@
-package com.korawit.mashup;
+package com.korawit.aroundmemashup;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
